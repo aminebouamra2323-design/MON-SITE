@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mini Shop Pro</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{
+    font-family: Arial;
+    margin:0;
+    background:#a593f7;
+}
+
+/* HEADER */
+.header{
+    background:rgb(238, 159, 159);
+    color:white;
+    padding:15px;
+    text-align:center;
+    font-size:22px;
+}
+
+/* HOME + END */
+#home, #end{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(45deg,#000,#333);
+    color:white;
+}
+
+/* BUTTON */
+button{
+    padding:10px;
+    margin-top:10px;
+    cursor:pointer;
+    border:none;
+}
+
+/* PRODUCTS */
+.container{
+    display:none;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top:20px;
+}
+
+.product{
+    background:rgb(253, 164, 164);
+    width:200px;
+    margin:10px;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.product img{
+    width:100%;
+    height:150px;
+    object-fit:cover;
+}
+
+/* CART */
+.cart{
+    position:fixed;
+    right:0;
+    top:0;
+    width:250px;
+    height:100%;
+    background:rgb(80, 154, 250);
+    border-left:2px solid rgb(102, 2, 2);
+    padding:10px;
+    overflow:auto;
+    display:none;
+}
+
+.item{
+    border-bottom:1px solid #08967e;
+    padding:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">ANIME Shop 🛒</div>
+
+<!-- HOME -->
+<div id="home">
+    <h1>Welcome 👋</h1>
+    <button onclick="startShop()">Start Shopping</button>
+</div>
+
+<!-- PRODUCTS -->
+<div class="container" id="products"></div>
+
+<!-- CART -->
+<div class="cart">
+    <h3>Cart</h3>
+    <div id="cart"></div>
+    <h4 id="total">Total: 0 DH</h4>
+
+    <button onclick="goCheckout()">Acheter</button>
+    <button onclick="downloadPDF()">Download PDF</button>
+</div>
+
+<!-- END -->
+<div id="end" style="display:none;">
+    <h1>Merci pour votre commande ✅</h1>
+    <button onclick="restart()">Back</button>
+</div>
+
+<script>
+let phone = "+212621023037"; // اWhatsApp
+
+let products = [
+    {id:1, name:"T-shirt Anime", price:120, img:"https://via.placeholder.com/200"},
+    {id:2, name:"Hoodie Black", price:250, img:"https://via.placeholder.com/200"},
+    {id:3, name:"Cap Style", price:80, img:"https://via.placeholder.com/200"}
+];
+
+let cart = [];
+
+/* START */
+function startShop(){
+    document.getElementById("home").style.display = "none";
+    document.getElementById("products").style.display = "flex";
+    document.querySelector(".cart").style.display = "block";
+    showProducts();
+}
+
+/* PRODUCTS */
+function showProducts(){
+    let box = document.getElementById("products");
+    box.innerHTML = "";
+
+    products.forEach(p=>{
+        box.innerHTML += `
+        <div class="product">
+            <img src="${p.img}">
+            <h4>${p.name}</h4>
+            <p>${p.price} DH</p>
+            <button onclick="buy(${p.id})">Add</button>
+            
+        </div>
+        `;
+    });
+}
+
+/* ADD CART */
+function buy(id){
+    let p = products.find(x=>x.id===id);
+    cart.push(p);
+    showCart();
+}
+
+/* CART */
+function showCart(){
+    let c = document.getElementById("cart");
+    c.innerHTML = "";
+
+    cart.forEach((p,i)=>{
+        c.innerHTML += `
+        <div class="item">
+            ${p.name} - ${p.price} DH
+            <button onclick="removeFromCart(${i})">X</button>
+        </div>
+        `;
+    });
+
+    updateTotal();
+}
+
+/* TOTAL */
+function updateTotal(){
+    let total = cart.reduce((s,p)=>s+p.price,0);
+    document.getElementById("total").innerText = "Total: " + total + " DH";
+}
+
+/* REMOVE CART */
+function removeFromCart(i){
+    cart.splice(i,1);
+    showCart();
+}
+
+/* DELETE PRODUCT */
+function removeProduct(id){
+    products = products.filter(p=>p.id!==id);
+    showProducts();
+}
+
+/* CHECKOUT + WHATSAPP */
+function goCheckout(){
+
+    let total = cart.reduce((s,p)=>s+p.price,0);
+
+    let msg = "🛒 Order from Mini Shop:%0A";
+
+    cart.forEach(p=>{
+        msg += "- " + p.name + " : " + p.price + " DH%0A";
+    });
+
+    msg += "%0A💰 Total: " + total + " DH";
+
+    let url = "https://wa.me/" + phone + "?text=" + msg;
+
+    window.open(url, "_blank");
+
+    document.getElementById("products").style.display = "none";
+    document.querySelector(".cart").style.display = "none";
+    document.getElementById("end").style.display = "flex";
+}
+
+/* PDF */
+function downloadPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let y = 10;
+    let total = 0;
+
+    doc.text("INVOICE - Mini Shop", 10, y);
+    y += 10;
+
+    cart.forEach((p,i)=>{
+        doc.text(`${i+1}. ${p.name} - ${p.price} DH`, 10, y);
+        y += 10;
+        total += p.price;
+    });
+
+    y += 10;
+    doc.text("TOTAL: " + total + " DH", 10, y);
+
+    doc.save("invoice.pdf");
+}
+
+/* RESTART */
+function restart(){
+    location.reload();
+}
+</script>
+
+</body>
+</html>
